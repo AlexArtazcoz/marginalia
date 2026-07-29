@@ -1,0 +1,178 @@
+:root {
+  --ink: #111;
+  --paper: #fff;
+  --gray: #8b8b8b;
+  --faint: #c9c9c9;
+  --line: #ececec;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+}
+
+::selection { background: var(--ink); color: var(--paper); }
+
+button { font: inherit; background: none; border: 0; cursor: pointer; color: inherit; }
+input, textarea { font: inherit; color: inherit; background: none; border: 0; outline: none; }
+
+/* ---- barra lateral ---- */
+
+#sidebar {
+  width: 264px;
+  flex-shrink: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  padding: 2.4rem 1.8rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  font-style: italic;
+  font-size: 1.1rem;
+  margin-bottom: 2.6rem;
+}
+
+#library { display: flex; flex-direction: column; gap: 1.9rem; }
+
+.year h2 {
+  font-size: .68rem;
+  font-weight: 400;
+  letter-spacing: .22em;
+  color: var(--gray);
+  margin-bottom: .65rem;
+}
+
+.book { display: block; width: 100%; text-align: left; padding: .32rem 0; }
+.book .t { display: block; font-size: .95rem; line-height: 1.35; }
+.book .a { display: block; font-size: .78rem; color: var(--gray); margin-top: .1rem; }
+.book:hover .t { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.book.active .t { font-weight: 600; }
+.book.done .t::after { content: " ·"; color: var(--gray); }
+
+#add-book {
+  margin-top: auto;
+  padding-top: 2.2rem;
+  text-align: left;
+  color: var(--gray);
+  font-size: .85rem;
+}
+#add-book:hover { color: var(--ink); }
+
+.hint { color: var(--faint); font-style: italic; font-size: .85rem; }
+
+/* ---- página del libro ---- */
+
+#main { flex: 1; height: 100vh; overflow-y: auto; }
+
+.empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--faint);
+  font-style: italic;
+  padding: 2rem;
+  text-align: center;
+}
+
+.page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 4.6rem 2.4rem 7rem;
+}
+
+.title { width: 100%; font-size: 1.85rem; line-height: 1.25; }
+.author { width: 100%; font-size: 1rem; font-style: italic; color: var(--gray); margin-top: .4rem; }
+.title::placeholder, .author::placeholder, .canvas::placeholder { color: var(--faint); }
+.author::placeholder, .canvas::placeholder { font-style: italic; }
+
+.meta {
+  margin-top: 1.1rem;
+  display: flex;
+  align-items: baseline;
+  gap: .6rem;
+  font-size: .82rem;
+  color: var(--gray);
+}
+.year-input { width: 2.8em; color: var(--gray); }
+.status { color: var(--gray); font-size: .82rem; }
+.status:hover { color: var(--ink); }
+
+.tabs {
+  display: flex;
+  gap: 1.6rem;
+  margin: 3rem 0 2rem;
+  border-bottom: 1px solid var(--line);
+}
+.tab {
+  font-size: .72rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 0 0 .7rem;
+  border-bottom: 1px solid transparent;
+  margin-bottom: -1px;
+}
+.tab:hover { color: var(--gray); }
+.tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+.canvas {
+  width: 100%;
+  min-height: 46vh;
+  resize: none;
+  overflow: hidden;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.page-footer {
+  margin-top: 3.4rem;
+  padding-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: .75rem;
+  color: var(--faint);
+}
+.delete { color: var(--faint); font-size: .75rem; }
+.delete:hover { color: var(--ink); }
+
+#save-status {
+  position: fixed;
+  right: 1.3rem;
+  bottom: 1.1rem;
+  font-size: .74rem;
+  font-style: italic;
+  color: var(--gray);
+  opacity: 0;
+  transition: opacity .35s ease;
+  pointer-events: none;
+}
+#save-status.show { opacity: 1; }
+
+/* ---- pantallas estrechas ---- */
+
+@media (max-width: 760px) {
+  body { flex-direction: column; }
+  #sidebar {
+    width: 100%;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 1.8rem 1.4rem 1.4rem;
+  }
+  .brand { margin-bottom: 1.6rem; }
+  #add-book { margin-top: 1.6rem; padding-top: 0; }
+  #main { height: auto; }
+  .page { padding: 2.6rem 1.4rem 5rem; }
+}

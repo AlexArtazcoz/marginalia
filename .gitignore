@@ -1,0 +1,7 @@
+.DS_Store
+node_modules/
+data/*.tmp
+
+# Los PDF/EPUB de los libros se quedan en local: nunca a GitHub
+books/*
+!books/.gitkeep
