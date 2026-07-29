@@ -114,7 +114,17 @@ function renderMain() {
           <input class="year-input" inputmode="numeric" value="${esc(b.year)}">
           <span>·</span>
           <button type="button" class="status">${b.status === 'terminado' ? '● terminado' : '○ leyendo'}</button>
+          <span>·</span>
+          ${b.file
+            ? `<a class="file-link" href="${esc(b.file.path)}" download="${esc(b.file.name)}">${esc((b.file.path.split('.').pop() || 'libro'))} ↓</a>
+               <button type="button" class="attach">cambiar</button>`
+            : '<button type="button" class="attach">+ adjuntar epub/pdf</button>'}
+          ${b.essential
+            ? `<span>·</span>
+               <a class="file-link" href="${esc(b.essential.path)}" download="${esc(b.essential.name)}">imprescindible ↓</a>`
+            : ''}
         </div>
+        <input type="file" class="file-input hidden" accept=".epub,.pdf">
       </header>
       <nav class="tabs">
         <button type="button" class="tab${isNotes ? ' active' : ''}" data-tab="notes">Apuntes</button>
@@ -157,6 +167,26 @@ function renderMain() {
     touch(b);
     renderSidebar();
   });
+  const fileInput = $('.file-input', main);
+  $('.attach', main).addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async () => {
+    const f = fileInput.files[0];
+    if (!f) return;
+    showStatus('subiendo…');
+    try {
+      const res = await fetch(
+        `/api/upload?book=${encodeURIComponent(b.id)}&kind=book&name=${encodeURIComponent(f.name)}`,
+        { method: 'POST', body: f }
+      );
+      if (!res.ok) throw new Error();
+      b.file = (await res.json()).file;
+      showStatus('libro adjuntado', true);
+      renderMain();
+    } catch {
+      showStatus('no se pudo adjuntar');
+    }
+  });
+
   for (const tab of main.querySelectorAll('.tab')) {
     tab.addEventListener('click', () => {
       state.tab = tab.dataset.tab;
@@ -169,6 +199,7 @@ function renderMain() {
     touch(b);
     autosize(ta);
     updateWords(ta.value);
+    keepCaretComfortable(ta);
   });
 
   const del = $('.delete', main);
@@ -203,6 +234,40 @@ function autosize(ta) {
   ta.style.height = 'auto';
   ta.style.height = ta.scrollHeight + 'px';
   main.scrollTop = sc;
+}
+
+/* ---- escritura cómoda: la página baja sola para que el cursor no quede pegado al fondo ---- */
+
+let mirror = null;
+
+// altura del texto desde el inicio del lienzo hasta la línea del cursor,
+// medida con un div espejo con la misma tipografía y anchura
+function caretOffset(ta) {
+  if (!mirror) {
+    mirror = document.createElement('div');
+    mirror.setAttribute('aria-hidden', 'true');
+    mirror.style.position = 'absolute';
+    mirror.style.visibility = 'hidden';
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.wordWrap = 'break-word';
+    mirror.style.pointerEvents = 'none';
+    document.body.appendChild(mirror);
+  }
+  const cs = getComputedStyle(ta);
+  mirror.style.width = ta.clientWidth + 'px';
+  mirror.style.fontFamily = cs.fontFamily;
+  mirror.style.fontSize = cs.fontSize;
+  mirror.style.lineHeight = cs.lineHeight;
+  mirror.style.letterSpacing = cs.letterSpacing;
+  mirror.textContent = ta.value.slice(0, ta.selectionStart) + '​';
+  return mirror.offsetHeight;
+}
+
+function keepCaretComfortable(ta) {
+  const main = $('#main');
+  const caretY = ta.getBoundingClientRect().top - main.getBoundingClientRect().top + caretOffset(ta);
+  const comfort = main.clientHeight * 0.6;
+  if (caretY > comfort) main.scrollTop += caretY - comfort;
 }
 
 function updateWords(text) {

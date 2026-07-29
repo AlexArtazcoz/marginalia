@@ -26,10 +26,43 @@ GitHub conserva el nombre `marginalia`.
 
 ## Flujo con Claude
 
-1. Alex deja el PDF/EPUB del libro en `books/` y lo comparte en una sesión.
+1. Alex adjunta el epub/pdf desde la propia app («+ adjuntar epub/pdf» en la ficha del
+   libro; queda en `books/<bookId>.<ext>`) o lo deja a mano en `books/`.
 2. Claude lo lee para tener contexto del libro y de los apuntes de Alex en
    `data/books.json`.
 3. Con ese contexto, ayuda a conversar sobre las reflexiones y a redactar la reseña final.
+
+## El imprescindible (síntesis para regalar)
+
+Cuando Alex termina un libro, Claude genera su «imprescindible»:
+
+- **Una sola página** (PDF, A4), blanco y negro, tipografía serif — la misma estética
+  que la app.
+- Materia prima: el epub/pdf de `books/`, los **Apuntes** y la **Reseña** del libro.
+- Objetivo: explicarle el libro a alguien que nunca lo ha leído para que pueda
+  disfrutarlo. No es un resumen académico: debe tener la voz y el toque personal de
+  Alex — sus reflexiones son el corazón del documento.
+- Guardarlo como `essentials/<bookId>.pdf` y registrarlo en el libro vía API (nunca
+  editando `data/books.json` a mano con el servidor en marcha):
+  `PUT /api/books` con `{"books": [<libro con "essential": {"path": "essentials/<bookId>.pdf", "name": "Imprescindible — <Título>.pdf"}>]}`
+  (el servidor fusiona por libro). La app mostrará «imprescindible ↓» en la ficha.
+- `essentials/` SÍ se commitea (es obra propia de Alex); `books/` NUNCA (copyright).
+
+## API del servidor
+
+- `GET /api/books` — biblioteca completa.
+- `PUT /api/books` — guarda con fusión por libro (`{books: [...], deleted: [ids]}`);
+  una pestaña desactualizada no puede borrar libros que no conoce, y los campos
+  `file`/`essential` sobreviven aunque el cliente no los envíe.
+- `POST /api/upload?book=<id>&kind=book|essential&name=<archivo>` — binario en el body;
+  guarda en `books/` o `essentials/` y actualiza el libro.
+
+## Plan futuro
+
+Cuando la biblioteca crezca, Alex quiere poder enviar esta web a cualquier persona para
+que se descargue los epubs y los imprescindibles. Pendiente de diseñar (hosting o export
+estático). Ojo con el copyright de los epubs al publicar: preferir ediciones de dominio
+público, o publicar solo los imprescindibles.
 
 ## Estilo
 

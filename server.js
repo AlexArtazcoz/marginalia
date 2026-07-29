@@ -13,6 +13,9 @@ const MIME = {
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
+  '.epub': 'application/epub+zip',
+  '.pdf': 'application/pdf',
+  '.md': 'text/markdown; charset=utf-8',
 };
 
 function readData() {
@@ -32,7 +35,50 @@ function writeData(data) {
 
 http
   .createServer((req, res) => {
-    const { pathname } = new URL(req.url, `http://localhost:${PORT}`);
+    const url = new URL(req.url, `http://localhost:${PORT}`);
+    const pathname = url.pathname;
+
+    // Subida del epub/pdf del libro (kind=book) o del imprescindible (kind=essential)
+    if (pathname === '/api/upload') {
+      if (req.method !== 'POST') {
+        res.writeHead(405);
+        return res.end();
+      }
+      const bookId = String(url.searchParams.get('book') || '');
+      const field = url.searchParams.get('kind') === 'essential' ? 'essential' : 'file';
+      const orig = url.searchParams.get('name') || 'archivo';
+      const ext = path.extname(orig).toLowerCase();
+      const allowed = field === 'file' ? ['.epub', '.pdf'] : ['.pdf', '.html', '.md'];
+      const exists = readData().books.some((x) => x.id === bookId);
+      if (!exists || !allowed.includes(ext)) {
+        res.writeHead(400, { 'Content-Type': MIME['.json'] });
+        return res.end('{"ok":false,"error":"libro o formato no válido"}');
+      }
+      const chunks = [];
+      let size = 0;
+      req.on('data', (c) => {
+        size += c.length;
+        if (size > 200 * 1024 * 1024) return req.destroy();
+        chunks.push(c);
+      });
+      req.on('end', () => {
+        const dir = field === 'file' ? 'books' : 'essentials';
+        const fname = bookId.replace(/[^\w-]/g, '') + ext;
+        const dest = path.join(ROOT, dir, fname);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, Buffer.concat(chunks));
+        const info = { path: `${dir}/${fname}`, name: orig };
+        const data = readData(); // relee por si hubo guardados durante la subida
+        const book = data.books.find((x) => x.id === bookId);
+        if (book) {
+          book[field] = info;
+          writeData(data);
+        }
+        res.writeHead(200, { 'Content-Type': MIME['.json'] });
+        res.end(JSON.stringify({ ok: true, [field]: info }));
+      });
+      return;
+    }
 
     if (pathname === '/api/books') {
       if (req.method === 'GET') {
@@ -56,7 +102,9 @@ http
             for (const d of Array.isArray(disk.books) ? disk.books : []) {
               const inc = incoming.get(d.id);
               if (inc) {
-                merged.push(String(inc.updatedAt) >= String(d.updatedAt) ? inc : d);
+                // el más reciente gana, pero los campos que el otro no conoce
+                // (p. ej. `file`/`essential` de una subida) sobreviven
+                merged.push(String(inc.updatedAt) >= String(d.updatedAt) ? { ...d, ...inc } : { ...inc, ...d });
                 incoming.delete(d.id);
               } else if (!deleted.has(d.id)) {
                 merged.push(d);
