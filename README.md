@@ -1,8 +1,10 @@
-# marginalia
+# meditaciones
 
-Cuaderno de lectura en blanco y negro. Una biblioteca organizada por años y, para cada
-libro, un lienzo en blanco: **Apuntes** para las reflexiones que van surgiendo durante la
-lectura y **Reseña** para cuando lo terminas.
+Cuaderno de lectura en blanco y negro (el título viene de las *Meditaciones* de Marco
+Aurelio). Una biblioteca organizada por años y, para cada libro, un lienzo en blanco:
+**Apuntes** para las reflexiones que van surgiendo durante la lectura y **Reseña** para
+cuando lo terminas. El botón «⤢ lienzo» esconde la biblioteca y pone el navegador a
+pantalla completa: solo queda el papel (Esc para volver).
 
 ## Ejecutar
 

@@ -1,3 +1,26 @@
 {
-  "books": []
+  "books": [
+    {
+      "id": "9b4c71aa-067b-4d07-ad87-cfaa26c8d74f",
+      "title": "Sobre la brevedad de la vida, el ocio y la felicidad",
+      "author": "Séneca",
+      "year": 2026,
+      "status": "leyendo",
+      "notes": "\"No recibimos una vida breve, sino que la abreviamos. No somos indigentes de vida, sino derrochadores. \"\n- Per mi que es derrochar la vida? Es fer allò que no et porta directament amb la pau, allò que et fa lligar-te més amb el teu ego que busca plaers i distraccions constants. Que no sap estar amb ell mateix gaudint de les coses més simples com mirar per la finestra i contemplar el paisatge o llegir un llibre. \n\n\"La vida, si sabes usar-la és larga\" Saber usar-la per mi és ser conscient de la irrealitat del temps, quan ets dins del moment present constantment conscient, ja no hi ha ni curt ni llarg. \n\nAvarcicia, coses superflues, adiccions, inacció, ambició, jutge aliè, comerç ",
+      "review": "",
+      "createdAt": "2026-07-29T18:32:03.902Z",
+      "updatedAt": "2026-07-29T18:44:44.825Z"
+    },
+    {
+      "id": "3f2c8e04-9d1a-4b7e-92c3-5a6e8d4f1b20",
+      "title": "Meditaciones",
+      "author": "Marco Aurelio",
+      "year": 2026,
+      "status": "leyendo",
+      "notes": "",
+      "review": "",
+      "createdAt": "2026-07-29T18:40:00.000Z",
+      "updatedAt": "2026-07-29T18:40:00.000Z"
+    }
+  ]
 }

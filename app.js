@@ -14,6 +14,7 @@ const current = () => state.data.books.find((b) => b.id === state.currentId) || 
 let saveTimer = null;
 let statusTimer = null;
 let pendingSave = false;
+const deletedIds = new Set(); // borrados explícitos de esta sesión, para la fusión del servidor
 
 function showStatus(text, fade) {
   const el = $('#save-status');
@@ -37,7 +38,7 @@ async function flushSave() {
     const res = await fetch('/api/books', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state.data),
+      body: JSON.stringify({ books: state.data.books, deleted: [...deletedIds] }),
     });
     if (!res.ok) throw new Error(res.status);
     showStatus('guardado', true);
@@ -96,8 +97,12 @@ function renderMain() {
   const b = current();
   if (!b) {
     main.innerHTML = '<div class="empty">Elige un libro o añade uno nuevo.</div>';
+    $('#focus-toggle').classList.add('hidden');
+    document.title = 'meditaciones';
     return;
   }
+  $('#focus-toggle').classList.remove('hidden');
+  document.title = (b.title ? b.title + ' · ' : '') + 'meditaciones';
 
   const isNotes = state.tab === 'notes';
   main.innerHTML = `
@@ -131,6 +136,7 @@ function renderMain() {
 
   $('.title', main).addEventListener('input', (e) => {
     b.title = e.target.value;
+    document.title = (b.title ? b.title + ' · ' : '') + 'meditaciones';
     touch(b);
     renderSidebar();
   });
@@ -178,6 +184,7 @@ function renderMain() {
       return;
     }
     clearTimeout(disarmTimer);
+    deletedIds.add(b.id);
     state.data.books = state.data.books.filter((x) => x.id !== b.id);
     state.currentId = null;
     scheduleSave();
@@ -240,9 +247,49 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+/* ---- modo lienzo: sin biblioteca y a pantalla completa ---- */
+
+function setFocus(on) {
+  document.body.classList.toggle('focus', on);
+  $('#focus-toggle').textContent = on ? '× salir' : '⤢ lienzo';
+  if (on) {
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (req) {
+      try {
+        const p = req.call(el);
+        if (p && p.catch) p.catch(() => {});
+      } catch { /* si el navegador lo deniega, el modo lienzo funciona igual */ }
+    }
+    $('.canvas')?.focus();
+  } else if (document.fullscreenElement || document.webkitFullscreenElement) {
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  }
+}
+
+$('#focus-toggle').addEventListener('click', () => {
+  setFocus(!document.body.classList.contains('focus'));
+});
+
+// al salir de pantalla completa con Esc, vuelve también la biblioteca
+for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) {
+  document.addEventListener(ev, () => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement && document.body.classList.contains('focus')) {
+      setFocus(false);
+    }
+  });
+}
+
+// guardar también al cambiar de app o esconder la pestaña
+window.addEventListener('blur', flushSave);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) flushSave();
+});
+
 window.addEventListener('pagehide', () => {
   if (pendingSave) {
-    navigator.sendBeacon('/api/books', new Blob([JSON.stringify(state.data)], { type: 'application/json' }));
+    const payload = JSON.stringify({ books: state.data.books, deleted: [...deletedIds] });
+    navigator.sendBeacon('/api/books', new Blob([payload], { type: 'application/json' }));
   }
 });
 

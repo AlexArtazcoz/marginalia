@@ -47,7 +47,23 @@ http
           try {
             const data = JSON.parse(body);
             if (!data || !Array.isArray(data.books)) throw new Error('formato inválido');
-            writeData(data);
+            // Fusión por libro: una pestaña desactualizada nunca puede borrar
+            // libros que no conoce; solo se elimina lo que llega en `deleted`.
+            const disk = readData();
+            const deleted = new Set(Array.isArray(data.deleted) ? data.deleted : []);
+            const incoming = new Map(data.books.filter((b) => b && b.id).map((b) => [b.id, b]));
+            const merged = [];
+            for (const d of Array.isArray(disk.books) ? disk.books : []) {
+              const inc = incoming.get(d.id);
+              if (inc) {
+                merged.push(String(inc.updatedAt) >= String(d.updatedAt) ? inc : d);
+                incoming.delete(d.id);
+              } else if (!deleted.has(d.id)) {
+                merged.push(d);
+              }
+            }
+            for (const inc of incoming.values()) if (!deleted.has(inc.id)) merged.push(inc);
+            writeData({ books: merged });
             res.writeHead(200, { 'Content-Type': MIME['.json'] });
             res.end('{"ok":true}');
           } catch (err) {

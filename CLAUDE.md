@@ -1,12 +1,17 @@
-# marginalia
+# meditaciones (repo: marginalia)
 
-Cuaderno de lectura personal de Alex. Blanco y negro, extremadamente simple.
+Cuaderno de lectura personal de Alex. Blanco y negro, extremadamente simple. La app se
+llama «meditaciones» (título tomado de las *Meditaciones* de Marco Aurelio); el repo de
+GitHub conserva el nombre `marginalia`.
 
 ## Qué es
 
 - Biblioteca organizada por años en la barra lateral.
 - Cada libro tiene dos lienzos: **Apuntes** (reflexiones durante la lectura) y **Reseña**
   (al terminar), más estado ○ leyendo / ● terminado.
+- Modo lienzo («⤢ lienzo», arriba a la derecha): oculta biblioteca, cabecera y pies, y
+  pide pantalla completa al navegador — solo queda el papel. Esc o «× salir» para volver.
+- La pestaña del navegador muestra el título del libro abierto.
 
 ## Cómo se ejecuta
 
