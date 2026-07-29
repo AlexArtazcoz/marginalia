@@ -11,6 +11,10 @@ GitHub conserva el nombre `marginalia`.
   (al terminar), más estado ○ leyendo / ● terminado.
 - Modo lienzo («⤢ lienzo», arriba a la derecha): oculta biblioteca, cabecera y pies, y
   pide pantalla completa al navegador — solo queda el papel. Esc o «× salir» para volver.
+- Dictado por voz («◌ dictar», abajo al centro, Web Speech API del navegador): escribe
+  lo dictado en el lienzo con mayúsculas y espacios bien puestos, y se autoguarda igual
+  que el teclado. El botón pequeño de al lado alterna cat/esp (persistido en
+  localStorage). Se reanuda solo cuando el navegador corta por pausas.
 - La pestaña del navegador muestra el título del libro abierto.
 
 ## Cómo se ejecuta
@@ -67,5 +71,6 @@ público, o publicar solo los imprescindibles.
 ## Estilo
 
 - Solo blanco, negro y grises; tipografía serif; interfaz en castellano.
+- Sin líneas separadoras: la separación se hace solo con espacio en blanco.
 - Vanilla HTML/CSS/JS, cero dependencias. Mantenerlo mínimo: cualquier función nueva
   debe justificar su presencia.

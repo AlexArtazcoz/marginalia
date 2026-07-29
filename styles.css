@@ -3,7 +3,6 @@
   --paper: #fff;
   --gray: #8b8b8b;
   --faint: #c9c9c9;
-  --line: #ececec;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,7 +29,6 @@ input, textarea { font: inherit; color: inherit; background: none; border: 0; ou
   flex-shrink: 0;
   height: 100vh;
   overflow-y: auto;
-  border-right: 1px solid var(--line);
   padding: 2.4rem 1.8rem 1.6rem;
   display: flex;
   flex-direction: column;
@@ -115,20 +113,16 @@ input, textarea { font: inherit; color: inherit; background: none; border: 0; ou
 .tabs {
   display: flex;
   gap: 1.6rem;
-  margin: 3rem 0 2rem;
-  border-bottom: 1px solid var(--line);
+  margin: 3rem 0 1.8rem;
 }
 .tab {
   font-size: .72rem;
   letter-spacing: .2em;
   text-transform: uppercase;
   color: var(--faint);
-  padding: 0 0 .7rem;
-  border-bottom: 1px solid transparent;
-  margin-bottom: -1px;
 }
 .tab:hover { color: var(--gray); }
-.tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+.tab.active { color: var(--ink); }
 
 .canvas {
   width: 100%;
@@ -163,6 +157,36 @@ input, textarea { font: inherit; color: inherit; background: none; border: 0; ou
 }
 #focus-toggle:hover { color: var(--ink); }
 
+/* ---- dictado por voz ---- */
+
+#dictation {
+  position: fixed;
+  bottom: 1.05rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: .8rem;
+  font-size: .78rem;
+  color: var(--gray);
+  max-width: min(60vw, 34rem);
+  z-index: 10;
+}
+#dict-toggle { color: var(--gray); font-size: .78rem; }
+#dict-toggle:hover { color: var(--ink); }
+#dictation.on #dict-toggle { color: var(--ink); animation: respirar 1.6s ease-in-out infinite; }
+#dict-lang { color: var(--faint); font-size: .72rem; letter-spacing: .08em; }
+#dict-lang:hover { color: var(--ink); }
+#dict-live {
+  color: var(--faint);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes respirar { 50% { opacity: .4; } }
+
 /* modo lienzo: solo el papel, nada más */
 body.focus #sidebar,
 body.focus .page > header,
@@ -190,8 +214,6 @@ body.focus .page { padding-top: 10vh; }
   #sidebar {
     width: 100%;
     height: auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
     padding: 1.8rem 1.4rem 1.4rem;
   }
   .brand { margin-bottom: 1.6rem; }

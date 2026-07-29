@@ -18,6 +18,8 @@ Abre <http://localhost:7777>. Sin dependencias ni build: solo Node.js.
 
 - Todo se guarda solo mientras escribes, en `data/books.json`, y la página baja sola
   para que el cursor nunca quede pegado al fondo.
+- Dictado por voz («◌ dictar», abajo al centro): habla y queda escrito en el lienzo,
+  sin tocar el teclado. Alterna catalán/castellano con el botón de al lado.
 - Cada libro puede llevar adjunto su epub/pdf («+ adjuntar epub/pdf» en su ficha);
   queda en `books/` (ignorado por git, no se sube a GitHub).
 - Al terminar un libro, Claude genera su **imprescindible**: una sola página que

@@ -98,10 +98,13 @@ function renderMain() {
   if (!b) {
     main.innerHTML = '<div class="empty">Elige un libro o añade uno nuevo.</div>';
     $('#focus-toggle').classList.add('hidden');
+    $('#dictation').classList.add('hidden');
+    stopDictation();
     document.title = 'meditaciones';
     return;
   }
   $('#focus-toggle').classList.remove('hidden');
+  $('#dictation').classList.toggle('hidden', !DICT_OK);
   document.title = (b.title ? b.title + ' · ' : '') + 'meditaciones';
 
   const isNotes = state.tab === 'notes';
@@ -143,6 +146,22 @@ function renderMain() {
   ta.value = isNotes ? b.notes || '' : b.review || '';
   autosize(ta);
   updateWords(ta.value);
+
+  // listo para escribir: cursor al final de lo escrito, a media pantalla
+  main.scrollTop = 0;
+  ta.focus({ preventScroll: true });
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  keepCaretComfortable(ta);
+
+  // Enter en título o autor salta al lienzo
+  for (const field of [$('.title', main), $('.author', main)]) {
+    field.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        ta.focus();
+      }
+    });
+  }
 
   $('.title', main).addEventListener('input', (e) => {
     b.title = e.target.value;
@@ -229,6 +248,7 @@ function renderMain() {
 }
 
 function autosize(ta) {
+  if (!ta.clientWidth) return; // sin layout todavía (pestaña en segundo plano)
   const main = $('#main');
   const sc = main.scrollTop;
   ta.style.height = 'auto';
@@ -265,6 +285,7 @@ function caretOffset(ta) {
 
 function keepCaretComfortable(ta) {
   const main = $('#main');
+  if (!main.clientHeight || !ta.clientWidth) return; // sin layout todavía
   const caretY = ta.getBoundingClientRect().top - main.getBoundingClientRect().top + caretOffset(ta);
   const comfort = main.clientHeight * 0.6;
   if (caretY > comfort) main.scrollTop += caretY - comfort;
@@ -343,6 +364,106 @@ for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) {
       setFocus(false);
     }
   });
+}
+
+/* ---- dictado por voz: escribir sin tocar el teclado ---- */
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const DICT_OK = Boolean(SR);
+let rec = null;
+let dictating = false;
+let dictLang = localStorage.getItem('dict-lang') || 'ca-ES';
+
+// inserta un fragmento dictado en el cursor, con mayúsculas y espacios bien puestos
+function insertDictation(text) {
+  const ta = $('.canvas');
+  const b = current();
+  let t = String(text).trim();
+  if (!ta || !b || !t) return;
+  const pos = ta.selectionStart ?? ta.value.length;
+  const before = ta.value.slice(0, pos);
+  const after = ta.value.slice(pos);
+  if (!before.trim() || /[.!?…]\s*$/.test(before) || /\n\s*$/.test(before)) {
+    t = t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  const glue = before && !/\s$/.test(before) ? ' ' : '';
+  ta.value = before + glue + t + after;
+  const caret = (before + glue + t).length;
+  ta.setSelectionRange(caret, caret);
+  if (state.tab === 'notes') b.notes = ta.value;
+  else b.review = ta.value;
+  touch(b);
+  autosize(ta);
+  updateWords(ta.value);
+  keepCaretComfortable(ta);
+}
+
+function setupRec() {
+  rec = new SR();
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i];
+      if (r.isFinal) insertDictation(r[0].transcript);
+      else interim += r[0].transcript;
+    }
+    $('#dict-live').textContent = interim;
+  };
+  // el navegador corta el reconocimiento en las pausas: mientras se dicte, se reanuda solo
+  rec.onend = () => {
+    $('#dict-live').textContent = '';
+    if (!dictating) return;
+    try {
+      rec.start();
+    } catch {
+      setTimeout(() => {
+        if (dictating) {
+          try { rec.start(); } catch {}
+        }
+      }, 400);
+    }
+  };
+  rec.onerror = (e) => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      stopDictation();
+      showStatus('permite el micrófono para poder dictar');
+    }
+  };
+}
+
+function startDictation() {
+  if (!DICT_OK || dictating) return;
+  if (!rec) setupRec();
+  rec.lang = dictLang;
+  dictating = true;
+  $('#dictation').classList.add('on');
+  $('#dict-toggle').textContent = '● parar';
+  try { rec.start(); } catch {}
+}
+
+function stopDictation() {
+  if (!dictating) return;
+  dictating = false;
+  $('#dictation').classList.remove('on');
+  $('#dict-toggle').textContent = '◌ dictar';
+  $('#dict-live').textContent = '';
+  try { rec && rec.stop(); } catch {}
+}
+
+if (DICT_OK) {
+  $('#dict-toggle').addEventListener('click', () => (dictating ? stopDictation() : startDictation()));
+  $('#dict-lang').addEventListener('click', () => {
+    dictLang = dictLang === 'ca-ES' ? 'es-ES' : 'ca-ES';
+    localStorage.setItem('dict-lang', dictLang);
+    $('#dict-lang').textContent = dictLang === 'ca-ES' ? 'cat' : 'esp';
+    if (rec) rec.lang = dictLang;
+    if (dictating) {
+      try { rec.stop(); } catch {} // onend lo reanuda ya con el idioma nuevo
+    }
+  });
+  $('#dict-lang').textContent = dictLang === 'ca-ES' ? 'cat' : 'esp';
 }
 
 // guardar también al cambiar de app o esconder la pestaña
