@@ -19,14 +19,30 @@ GitHub conserva el nombre `marginalia`.
 
 ## Cómo se ejecuta
 
-- `node server.js` → http://localhost:7777. Sin dependencias, sin build.
+- **Web (principal desde jul-2026)**: https://alexartazcoz.github.io/marginalia/ —
+  GitHub Pages sobre este mismo repo (público). Cualquiera puede LEER la biblioteca;
+  para ESCRIBIR hace falta la clave de GitHub de Alex (botón «activar edición» al pie
+  de la biblioteca; token fine-grained con permiso Contents sobre este repo, se guarda
+  una vez por dispositivo). Despliega `.github/workflows/pages.yml` en cada push que
+  toque el código; los commits de datos NO redespliegan.
+- **Local (emergencias / trabajo de sesión)**: `node server.js` → http://localhost:7777.
+  Sin dependencias, sin build.
+- `storage.js` es la capa de almacenamiento del modo web: lectura pública via
+  raw.githubusercontent (sin clave) o via API (con clave, al instante), escritura via
+  Contents API con la misma fusión por libro que el servidor, caché local anti-pérdidas
+  y sondeo cada minuto. En localhost no interviene (manda el servidor).
 
 ## Datos
 
-- `data/books.json` — fuente de verdad: todos los libros, apuntes y reseñas. El servidor
-  lo reescribe con cada autoguardado. Son reflexiones personales: tratarlas con cuidado.
+- `data/books.json` — fuente de verdad: todos los libros, apuntes y reseñas. **Desde
+  jul-2026 la copia canónica es la de GitHub (rama `main`)**: la versión web guarda
+  haciendo commits via API («meditaciones: actualiza la biblioteca»). En sesiones de
+  Claude: `git pull` SIEMPRE antes de leer o tocar `data/books.json`; y si se escribe
+  en local con el servidor, commit y push al acabar para que la web lo vea.
+- El repo es **público** desde el 30-jul-2026 (decisión de Alex): apuntes y reseñas son
+  legibles por cualquiera con el enlace.
 - `books/` — PDF/EPUB de los libros que Alex está leyendo. **Ignorado por git: nunca
-  subir estos archivos a GitHub** (copyright).
+  subir estos archivos a GitHub** (copyright) — con el repo público, más importante aún.
 
 ## Flujo con Claude
 
@@ -51,6 +67,7 @@ Cuando Alex termina un libro, Claude genera su «imprescindible»:
   `PUT /api/books` con `{"books": [<libro con "essential": {"path": "essentials/<bookId>.pdf", "name": "Imprescindible — <Título>.pdf"}>]}`
   (el servidor fusiona por libro). La app mostrará «imprescindible ↓» en la ficha.
 - `essentials/` SÍ se commitea (es obra propia de Alex); `books/` NUNCA (copyright).
+  Tras registrar un imprescindible en local: commit y push, para que la web lo sirva.
 
 ## API del servidor
 
@@ -63,10 +80,9 @@ Cuando Alex termina un libro, Claude genera su «imprescindible»:
 
 ## Plan futuro
 
-Cuando la biblioteca crezca, Alex quiere poder enviar esta web a cualquier persona para
-que se descargue los epubs y los imprescindibles. Pendiente de diseñar (hosting o export
-estático). Ojo con el copyright de los epubs al publicar: preferir ediciones de dominio
-público, o publicar solo los imprescindibles.
+La web compartible ya existe (ver «Cómo se ejecuta»): cualquiera con el enlace puede
+leer la biblioteca y bajarse los imprescindibles. Los epubs siguen fuera (copyright);
+si algún día se comparten, solo ediciones de dominio público.
 
 ## Estilo
 
