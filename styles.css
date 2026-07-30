@@ -221,3 +221,17 @@ body.focus .page { padding-top: 10vh; }
   #main { height: auto; }
   .page { padding: 2.6rem 1.4rem 40vh; }
 }
+
+/* versión web: botón discreto para activar la edición con la clave */
+#edit-toggle {
+  margin: .2rem 1.25rem 1.1rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: .8rem;
+  color: #bbb;
+  text-align: left;
+  cursor: pointer;
+}
+#edit-toggle:hover { color: #141414; }

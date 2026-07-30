@@ -27,7 +27,9 @@ function showStatus(text, fade) {
 function scheduleSave() {
   pendingSave = true;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(flushSave, 600);
+  // en la web cada guardado es un commit: agrupa más que en localhost
+  saveTimer = setTimeout(flushSave, IS_SERVER ? 600 : 8000);
+  if (!IS_SERVER) cacheLocal();
 }
 
 async function flushSave() {
@@ -35,12 +37,17 @@ async function flushSave() {
   if (!pendingSave) return;
   pendingSave = false;
   try {
-    const res = await fetch('/api/books', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ books: state.data.books, deleted: [...deletedIds] }),
-    });
-    if (!res.ok) throw new Error(res.status);
+    if (IS_SERVER) {
+      const res = await fetch('/api/books', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ books: state.data.books, deleted: [...deletedIds] }),
+      });
+      if (!res.ok) throw new Error(res.status);
+    } else {
+      await githubSave(state.data.books, [...deletedIds]);
+      cacheLocal();
+    }
     showStatus('guardado', true);
   } catch {
     pendingSave = true;
@@ -90,6 +97,13 @@ function renderSidebar() {
   }
 }
 
+// en la web sin clave se puede leer todo, pero no tocar nada
+function applyReadOnly(scope) {
+  if (canEdit()) return;
+  for (const el of scope.querySelectorAll('input, textarea')) el.readOnly = true;
+  for (const el of scope.querySelectorAll('.status, .attach, .delete')) el.classList.add('hidden');
+}
+
 /* ---- página del libro ---- */
 
 function renderMain() {
@@ -104,7 +118,7 @@ function renderMain() {
     return;
   }
   $('#focus-toggle').classList.remove('hidden');
-  $('#dictation').classList.toggle('hidden', !DICT_OK);
+  $('#dictation').classList.toggle('hidden', !DICT_OK || !canEdit());
   document.title = (b.title ? b.title + ' · ' : '') + 'meditaciones';
 
   const isNotes = state.tab === 'notes';
@@ -118,13 +132,15 @@ function renderMain() {
           <span>·</span>
           <button type="button" class="status">${b.status === 'terminado' ? '● terminado' : '○ leyendo'}</button>
           <span>·</span>
-          ${b.file
-            ? `<a class="file-link" href="${esc(b.file.path)}" download="${esc(b.file.name)}">${esc((b.file.path.split('.').pop() || 'libro'))} ↓</a>
+          ${!IS_SERVER
+            ? ''
+            : b.file
+              ? `<a class="file-link" href="${esc(b.file.path)}" download="${esc(b.file.name)}">${esc((b.file.path.split('.').pop() || 'libro'))} ↓</a>
                <button type="button" class="attach">cambiar</button>`
-            : '<button type="button" class="attach">+ adjuntar epub/pdf</button>'}
+              : '<button type="button" class="attach">+ adjuntar epub/pdf</button>'}
           ${b.essential
             ? `<span>·</span>
-               <a class="file-link" href="${esc(b.essential.path)}" download="${esc(b.essential.name)}">imprescindible ↓</a>`
+               <a class="file-link" href="${esc(IS_SERVER ? b.essential.path : RAW_BASE + b.essential.path)}"${IS_SERVER ? ` download="${esc(b.essential.name)}"` : ' target="_blank" rel="noopener"'}>imprescindible ↓</a>`
             : ''}
         </div>
         <input type="file" class="file-input hidden" accept=".epub,.pdf">
@@ -187,7 +203,8 @@ function renderMain() {
     renderSidebar();
   });
   const fileInput = $('.file-input', main);
-  $('.attach', main).addEventListener('click', () => fileInput.click());
+  const attach = $('.attach', main);
+  if (attach) attach.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', async () => {
     const f = fileInput.files[0];
     if (!f) return;
@@ -245,6 +262,8 @@ function renderMain() {
   $('.page', main).addEventListener('click', (e) => {
     if (e.target.classList.contains('page')) ta.focus();
   });
+
+  applyReadOnly(main);
 }
 
 function autosize(ta) {
@@ -473,24 +492,57 @@ document.addEventListener('visibilitychange', () => {
 });
 
 window.addEventListener('pagehide', () => {
-  if (pendingSave) {
+  if (!pendingSave) return;
+  if (IS_SERVER) {
     const payload = JSON.stringify({ books: state.data.books, deleted: [...deletedIds] });
     navigator.sendBeacon('/api/books', new Blob([payload], { type: 'application/json' }));
+  } else {
+    cacheLocal(); // el guardado pendiente se refusiona al volver a abrir
   }
 });
 
 (async function init() {
   try {
-    const res = await fetch('/api/books');
-    if (!res.ok) throw new Error(res.status);
-    state.data = await res.json();
+    if (IS_SERVER) {
+      const res = await fetch('/api/books');
+      if (!res.ok) throw new Error(res.status);
+      state.data = await res.json();
+    } else {
+      state.data = await loadRemote();
+      const cache = canEdit() ? readCache() : null;
+      if (cache) {
+        // trabajo de este dispositivo que no llegó a subirse: refusiona y súbelo
+        const merged = mergeBooks(state.data, cache.books, cache.deleted || []);
+        if (JSON.stringify(merged) !== JSON.stringify(state.data)) {
+          state.data = merged;
+          githubSave(state.data.books, cache.deleted || []).then(cacheLocal).catch(() => {});
+        }
+      }
+    }
   } catch {
-    $('#main').innerHTML =
-      '<div class="empty">No se pudo cargar la biblioteca — arranca el servidor con «node server.js».</div>';
-    return;
+    const cache = readCache();
+    if (cache) {
+      state.data = { books: cache.books };
+      showStatus('sin conexión — copia local');
+    } else {
+      $('#main').innerHTML = IS_SERVER
+        ? '<div class="empty">No se pudo cargar la biblioteca — arranca el servidor con «node server.js».</div>'
+        : '<div class="empty">No se pudo cargar la biblioteca — revisa la conexión.</div>';
+      return;
+    }
   }
   if (!Array.isArray(state.data.books)) state.data = { books: [] };
   const last = [...state.data.books].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))[0];
   if (last) state.currentId = last.id;
   render();
+  if (!IS_SERVER) {
+    $('#add-book').classList.toggle('hidden', !canEdit());
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.id = 'edit-toggle';
+    toggle.textContent = canEdit() ? 'cambiar clave' : 'activar edición';
+    toggle.addEventListener('click', enableEditPrompt);
+    $('#sidebar').appendChild(toggle);
+    startPoll();
+  }
 })();
