@@ -102,6 +102,7 @@ function applyReadOnly(scope) {
   if (canEdit()) return;
   for (const el of scope.querySelectorAll('input, textarea')) el.readOnly = true;
   for (const el of scope.querySelectorAll('.status, .attach, .delete')) el.classList.add('hidden');
+  for (const el of scope.querySelectorAll('.meta > span')) el.classList.add('hidden'); // separadors orfes
 }
 
 /* ---- página del libro ---- */
