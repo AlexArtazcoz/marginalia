@@ -14,6 +14,28 @@
         "path": "books/9b4c71aa-067b-4d07-ad87-cfaa26c8d74f.epub",
         "name": "SOBRE LA BREVEDAD DE LA VIDA, EL OCIO Y LA FELICIDAD -- Lucio Anneo Séneca -- 2013 -- ePubLibre -- 8f06027f02aa1c2f3ce06801a1b6caec -- Anna’s Archive.epub"
       }
+    },
+    {
+      "id": "44b4e2b8-b1fc-47a4-8d3b-a2c033b96552",
+      "title": "",
+      "author": "",
+      "year": 2026,
+      "status": "leyendo",
+      "notes": "",
+      "review": "",
+      "createdAt": "2026-09-15T06:13:21.469Z",
+      "updatedAt": "2026-09-15T06:13:21.469Z"
+    },
+    {
+      "id": "6e0fb24c-1ead-4f41-9169-758837dc134f",
+      "title": "",
+      "author": "",
+      "year": 2026,
+      "status": "leyendo",
+      "notes": "",
+      "review": "",
+      "createdAt": "2026-09-15T06:13:27.158Z",
+      "updatedAt": "2026-09-15T06:13:27.158Z"
     }
   ]
 }
